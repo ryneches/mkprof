@@ -71,6 +71,17 @@ extra:
     default_author: your-slug    # default: inferred if authors.yml has one entry
 ```
 
+## Philosophy
+
+`mkprof init` generates a site that behaves more like a traditional blog than
+a documentation hub. Posts are listed directly in the sidebar for easy
+browsing; the home page shows recent activity rather than a static welcome
+message; the whole thing is plain HTML with no JavaScript required for
+reading.
+
+These choices are deliberate and documented. See [Design](design.md) for the
+thinking behind them.
+
 ## Blog
 
 See the [Blog](blog/index.md) for release notes and announcements.

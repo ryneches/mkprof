@@ -463,9 +463,9 @@ class BuildApp(App[None]):
     # ── Pipeline stages ───────────────────────────────────────────────────────
 
     def _log_lint(self, issues: list[nb_lint.LintIssue]) -> None:
-        colours = {"info": "dim", "warn": "yellow", "error": "red"}
+        colors = {"info": "dim", "warn": "yellow", "error": "red"}
         for issue in issues:
-            col = colours.get(issue.level, "white")
+            col = colors.get(issue.level, "white")
             loc = f":{issue.line}" if issue.line else ""
             tag = " [dim](fixed)[/dim]" if issue.fixed else ""
             self._log(f"   [{col}]{issue.check}{loc}: {issue.message}[/{col}]{tag}")

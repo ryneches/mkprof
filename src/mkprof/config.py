@@ -10,6 +10,16 @@ from pathlib import Path
 import yaml
 
 
+class _MkdocsLoader(yaml.SafeLoader):
+    """SafeLoader extended to ignore !!python/* tags used by mkdocs-material."""
+
+
+_MkdocsLoader.add_multi_constructor(
+    "tag:yaml.org,2002:python/",
+    lambda loader, suffix, node: None,
+)
+
+
 @dataclass
 class MkprofConfig:
     docs_dir: Path
@@ -40,7 +50,7 @@ def resolve(mkdocs_yml: Path | None = None) -> MkprofConfig:
         )
 
     root = mkdocs_yml.parent
-    raw = yaml.safe_load(mkdocs_yml.read_text(encoding="utf-8")) or {}
+    raw = yaml.load(mkdocs_yml.read_text(encoding="utf-8"), Loader=_MkdocsLoader) or {}
 
     # ── docs_dir ──────────────────────────────────────────────────────────────
     docs_dir = root / raw.get("docs_dir", "docs")

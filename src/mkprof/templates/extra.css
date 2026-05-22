@@ -1,0 +1,173 @@
+/* ── Theme palette ───────────────────────────────────────────────────────── */
+/* Define a named color scheme and reference it under theme.palette[*].scheme
+   in mkdocs.yml.  The variables below are the ones Material exposes for
+   overriding; fill in your own hex values.
+
+[data-md-color-scheme="my-scheme"] {
+  --md-primary-fg-color:        ;
+  --md-primary-fg-color--light: ;
+  --md-primary-fg-color--dark:  ;
+  --md-accent-fg-color:         ;
+  --md-typeset-a-color:         ;
+}
+
+[data-md-color-scheme="my-scheme"] .md-typeset a:hover { color: ; }
+*/
+
+/* Dark mode — Material uses data-md-color-scheme="slate".
+   --md-hue shifts the generated background palette (0–360, default 232).
+
+[data-md-color-scheme="slate"] {
+  --md-hue:               ;
+  --md-primary-fg-color:  ;
+  --md-accent-fg-color:   ;
+  --md-typeset-a-color:   ;
+}
+*/
+
+/* ── Notebook figure images (.nb-fig) ────────────────────────────────────── */
+/* mkprof applies .nb-fig to figures extracted from notebook output cells.   */
+
+.md-typeset img.nb-fig {
+  display: block;
+  margin: 1.75rem auto;
+  max-width: 80%;
+  /* background, padding, border, border-radius, box-shadow: customize */
+}
+
+[data-md-color-scheme="slate"] .md-typeset img.nb-fig {
+  /* dark-mode adjustments, e.g. heavier box-shadow */
+}
+
+/* ── Notebook photograph images (.nb-photo) ──────────────────────────────── */
+/* Full-width images; apply by setting the image class to nb-photo in your
+   notebook or markdown.                                                      */
+
+.md-typeset img.nb-photo {
+  display: block;
+  margin: 1.75rem auto;
+  width: 100%;
+  /* border-radius, border: customize */
+}
+
+[data-md-color-scheme="slate"] .md-typeset img.nb-photo {
+  /* dark-mode border color, etc. */
+}
+
+/* ── Code blocks ─────────────────────────────────────────────────────────── */
+
+.highlight pre {
+  /* border-radius, box-shadow: customize */
+}
+
+code:not(.highlight code) {
+  /* background-color, padding, border-radius, font-size: customize */
+}
+
+[data-md-color-scheme="slate"] code:not(.highlight code) {
+  /* dark-mode background: customize */
+}
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+
+.md-typeset .md-typeset__scrollwrap { text-align: center; }
+
+table:not(.dataframe) {
+  width: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden !important;
+  margin: 1.5rem auto;
+  font-size: 0.8rem;
+  /* border, border-radius, box-shadow, background: customize */
+}
+
+table:not(.dataframe) thead {
+  /* background, color: customize */
+}
+
+table:not(.dataframe) thead th {
+  padding: 0.5rem 0.6rem;
+  border: none;
+  white-space: nowrap;
+}
+
+table:not(.dataframe) tbody tr            { border-bottom: 1px solid var(--md-default-fg-color--lightest); }
+table:not(.dataframe) tbody tr:last-child { border-bottom: none; }
+table:not(.dataframe) tbody td,
+table:not(.dataframe) tbody th            { padding: 0.4rem 0.6rem; border: none; }
+
+table:not(.dataframe) tbody tr:hover         { /* hover background: customize */ }
+table:not(.dataframe) tbody tr:nth-child(even) { /* stripe color: customize */ }
+
+[data-md-color-scheme="slate"] table:not(.dataframe) { /* dark border/bg: customize */ }
+
+/* ── DataFrame (pandas / polars output) ──────────────────────────────────── */
+/* Same structure as table:not(.dataframe) above.  Style them together or
+   separately depending on whether you want output tables to look different
+   from prose tables.                                                         */
+
+.dataframe {
+  width: auto !important;
+  border-collapse: separate !important;
+  border-spacing: 0;
+  overflow: hidden !important;
+  margin: 0;
+  font-size: 0.8rem;
+  /* border, border-radius, box-shadow, background: customize */
+}
+
+.dataframe thead               { /* background, color: customize */ }
+.dataframe thead th            { padding: 0.5rem 0.6rem; border: none; white-space: nowrap; }
+.dataframe tbody tr            { border-bottom: 1px solid var(--md-default-fg-color--lightest); }
+.dataframe tbody tr:last-child { border-bottom: none; }
+.dataframe tbody td,
+.dataframe tbody th            { padding: 0.4rem 0.6rem; border: none; }
+.dataframe tbody th            { font-weight: 500; }
+.dataframe tbody td:not(:first-child) { text-align: right; }
+
+.dataframe tbody tr:hover            { /* hover background: customize */ }
+.dataframe tbody tr:nth-child(even)  { /* stripe color: customize */ }
+
+[data-md-color-scheme="slate"] .dataframe { /* dark border/bg: customize */ }
+
+/* Required: keeps wide DataFrames from breaking the page layout. */
+.dataframe-wrapper {
+  overflow-x: auto;
+  width: fit-content;
+  max-width: 100%;
+  margin: 1.5rem auto;
+}
+
+/* ── Recent-posts admonition ─────────────────────────────────────────────── */
+/* The <!-- RECENT_POSTS --> hook renders as !!! recent-posts "Recent Posts".
+   The icon variable and mask rules below are required for the icon to appear;
+   the border and background colors are yours to choose.                    */
+
+:root {
+  --md-admonition-icon--recent-posts: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z'/></svg>");
+}
+
+.md-typeset .admonition.recent-posts,
+.md-typeset details.recent-posts {
+  border-color: var(--md-primary-fg-color); /* customize */
+}
+
+.md-typeset .recent-posts > .admonition-title,
+.md-typeset .recent-posts > summary {
+  background-color: rgba(0, 0, 0, 0.05); /* customize */
+}
+
+.md-typeset .recent-posts > .admonition-title::before,
+.md-typeset .recent-posts > summary::before {
+  background-color: var(--md-primary-fg-color); /* customize */
+  -webkit-mask-image: var(--md-admonition-icon--recent-posts);
+          mask-image: var(--md-admonition-icon--recent-posts);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.recent-posts,
+[data-md-color-scheme="slate"] .md-typeset details.recent-posts {
+  /* dark-mode border: customize */
+}
+
+/* ── Site-specific styles ────────────────────────────────────────────────── */

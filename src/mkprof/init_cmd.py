@@ -3,96 +3,14 @@ mkprof.init_cmd — scaffold a new mkprof/mkdocs-material site.
 """
 
 import sys
+from importlib.resources import files as _pkg_files
 from pathlib import Path
 
+_TEMPLATES = _pkg_files("mkprof") / "templates"
 
-_MKDOCS_YML = """\
-site_name: {site_name}
 
-docs_dir: docs
-
-# Prevent raw notebooks and Jupyter checkpoints from being included in the build.
-exclude_docs: |
-  blog/posts/*.ipynb
-  **/.ipynb_checkpoints/
-
-hooks:
-  - hooks.py
-
-theme:
-  name: material
-  features:
-    - content.code.copy
-    - navigation.indexes
-    - navigation.instant
-    - navigation.footer
-    - navigation.top
-    - search.suggest
-    - search.highlight
-    - toc.follow
-
-plugins:
-  - search
-  - blog:
-      blog_dir: blog
-      authors: true
-      authors_file: authors.yml
-      post_excerpt: optional
-      post_excerpt_separator: <!-- more -->
-
-markdown_extensions:
-  - admonition
-  - attr_list
-  - footnotes
-  - toc:
-      permalink: true
-  - pymdownx.highlight
-  - pymdownx.superfences
-"""
-
-_AUTHORS_YML = """\
-authors:
-  {slug}:
-    name: {name}
-    description: {name}
-    avatar: https://github.com/{slug}.png
-"""
-
-_HOOKS_PY = '''\
-"""
-hooks.py — MkDocs event hooks for this site.
-
-See: https://www.mkdocs.org/user-guide/configuration/#hooks
-"""
-
-# Add site-level hooks here.  For example:
-#
-# def on_page_markdown(markdown, *, page, config, files):
-#     return markdown
-'''
-
-_DOCS_INDEX_MD = """\
----
-title: Home
----
-
-# Welcome
-
-This site is built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/).
-
-See the [Blog](blog/index.md) for posts.
-"""
-
-_BLOG_INDEX_MD = """\
-# Blog
-"""
-
-_GITIGNORE = """\
-site/
-__pycache__/
-*.pyc
-.ipynb_checkpoints/
-"""
+def _tpl(name: str) -> str:
+    return (_TEMPLATES / name).read_text(encoding="utf-8")
 
 
 def _prompt(label: str, default: str = "") -> str:
@@ -126,23 +44,26 @@ def run_init(target: Path) -> None:
 
     # ── Create directory tree ─────────────────────────────────────────────────
     (target / "docs" / "blog" / "posts").mkdir(parents=True, exist_ok=True)
+    (target / "docs" / "stylesheets").mkdir(parents=True, exist_ok=True)
+    (target / "docs" / "javascripts").mkdir(parents=True, exist_ok=True)
 
     # ── Stage files to write ──────────────────────────────────────────────────
     files: list[tuple[Path, str]] = [
-        (target / "mkdocs.yml", _MKDOCS_YML.format(site_name=site_name)),
-        (target / "hooks.py", _HOOKS_PY),
-        (target / ".gitignore", _GITIGNORE),
-        (target / "docs" / "index.md", _DOCS_INDEX_MD),
-        (target / "docs" / "blog" / "index.md", _BLOG_INDEX_MD),
+        (target / "mkdocs.yml",                           _tpl("mkdocs.yml").format(site_name=site_name)),
+        (target / "hooks.py",                             _tpl("hooks.py")),
+        (target / ".gitignore",                           _tpl("gitignore")),
+        (target / "docs" / "index.md",                   _tpl("index.md")),
+        (target / "docs" / "tags.md",                    _tpl("tags.md")),
+        (target / "docs" / "blog" / "index.md",          _tpl("blog_index.md")),
+        (target / "docs" / "stylesheets" / "extra.css",  _tpl("extra.css")),
+        (target / "docs" / "javascripts" / "mathjax.js", _tpl("mathjax.js")),
+        (target / "docs" / "javascripts" / "blog_nav.js", _tpl("blog_nav.js")),
     ]
 
     if author_slug:
         files.append((
             target / "docs" / "authors.yml",
-            _AUTHORS_YML.format(
-                slug=author_slug,
-                name=author_name or author_slug,
-            ),
+            _tpl("authors.yml").format(slug=author_slug, name=author_name or author_slug),
         ))
 
     for path, content in files:

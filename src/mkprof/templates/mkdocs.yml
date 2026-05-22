@@ -1,0 +1,89 @@
+site_name: {site_name}
+
+docs_dir: docs
+
+# Prevent raw notebooks and Jupyter checkpoints from appearing in the build.
+exclude_docs: |
+  blog/posts/*.ipynb
+  **/.ipynb_checkpoints/
+
+hooks:
+  - hooks.py
+
+# Style: remove nav to let MkDocs auto-generate it from the docs/ tree.
+nav:
+  - Home: index.md
+  - Blog:
+    - blog/index.md
+  - Tags: tags.md
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.footer
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+  # Style: remove or replace to change the color scheme.
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+plugins:
+  - search
+  # Style: social cards — requires Pillow and cairosvg; remove if not needed.
+  - social
+  # Style: remove the tags plugin if you don't use tags.
+  - tags:
+      tags_file: tags.md
+  - blog:
+      blog_dir: blog
+      authors: true
+      authors_file: authors.yml
+      post_excerpt: optional
+      post_excerpt_separator: <!-- more -->
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - meta
+  - toc:
+      permalink: true
+  # Style: remove arithmatex and the MathJax entries in extra_javascript if
+  # you don't use LaTeX math.
+  - pymdownx.arithmatex:
+      generic: true
+  # Required for :material-*: icons used in notebook download links.
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  # Style: remove these two lines if you removed pymdownx.arithmatex above.
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - javascripts/blog_nav.js

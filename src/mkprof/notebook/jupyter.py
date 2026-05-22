@@ -112,14 +112,14 @@ def _rewrite_asset_paths(
         """Return a relative asset path, or raw_path if not a local asset."""
         if raw_path.startswith(("http://", "https://", "//", "#", "mailto:", "/")):
             return raw_path
-        normalised = re.sub(r"^\./+", "", raw_path)
-        if normalised.startswith("assets/"):
-            rel_file = normalised[len("assets/"):]
+        normalized = re.sub(r"^\./+", "", raw_path)
+        if normalized.startswith("assets/"):
+            rel_file = normalized[len("assets/"):]
             if not (assets_dir / rel_file).exists():
                 warnings_out.append(f"file not found in docs/assets/: {raw_path!r}")
             return f"{rel_prefix}/{rel_file}"
-        if "/" not in normalised and (assets_dir / normalised).exists():
-            return f"{rel_prefix}/{normalised}"
+        if "/" not in normalized and (assets_dir / normalized).exists():
+            return f"{rel_prefix}/{normalized}"
         return raw_path
 
     # Markdown image / link: ![alt](path) or [text](path) with optional title
@@ -276,7 +276,7 @@ def parse(nb_path: Path, docs_dir: Path) -> NotebookPost:
     if meta is None:
         raise ValueError(f"No blog metadata found in {nb_path.name}")
 
-    # Normalise date to datetime.date so yaml.dump serialises it as YYYY-MM-DD.
+    # Normalize date to datetime.date so yaml.dump serializes it as YYYY-MM-DD.
     d = meta.get("date")
     if isinstance(d, datetime.datetime):
         meta["date"] = d.date()

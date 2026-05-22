@@ -22,7 +22,13 @@ professor, so... look, I had to name it *something*.
   compatibility checks)
 - Skips conversion when the generated `.md` is already newer than its source
   notebook
-- Ships an example `hooks.py` for nav injection and recent-post summaries
+- `mkprof init` scaffolds a complete, opinionated site: `hooks.py` with nav
+  injection and recent-posts support, MathJax, dark/light palette toggle,
+  tags, Blog section open by default in the sidebar (via a small script that
+  sets Material's accordion checkbox, not `navigation.expand`), and a CSS file with
+  stubs for figures, photographs, tables, DataFrames, code blocks, and the
+  recent-posts admonition — structural rules with color placeholders so you
+  start with a working layout and make your own color decisions
 
 mkprof is a pre-processor: it runs before `mkdocs build`, transforming
 notebooks into Markdown that mkdocs-material already knows how to handle.

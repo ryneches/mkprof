@@ -31,7 +31,7 @@ pip install mkdocs-material
 
 ## Scaffold a new site
 
-The `mkprof init` command creates a minimal site structure:
+The `mkprof init` command creates a complete, working site:
 
 ```bash
 mkprof init my-blog
@@ -42,16 +42,28 @@ This writes:
 
 ```
 my-blog/
-  mkdocs.yml          ← MkDocs configuration
-  hooks.py            ← MkDocs event hooks (empty, ready to customise)
+  mkdocs.yml              ← MkDocs configuration
+  hooks.py                ← nav injection + recent-posts hook
   .gitignore
   docs/
-    index.md
+    index.md              ← home page with recent-posts placeholder
+    tags.md               ← tags index
+    authors.yml           ← author metadata (if you provided a name)
+    stylesheets/
+      extra.css           ← CSS stubs for figures, photos, tables, DataFrames, code blocks, theme palette
+      blog_nav.js         ← keeps the Blog section open by default in the sidebar
+    javascripts/
+      mathjax.js          ← MathJax configuration
     blog/
       index.md
-      posts/          ← put your notebooks here
-    authors.yml       ← author metadata
+      posts/              ← put your notebooks here
 ```
+
+The generated site includes a few opinionated defaults — posts listed in the
+sidebar, a river-of-news home page, MathJax, a dark/light palette toggle —
+that differ from a stock MkDocs Material site. See [Design](../../design.md)
+for the reasoning. Anything marked `# Style:` in `mkdocs.yml` or `hooks.py`
+is a stylistic choice you can remove in a minute; the rest is functional.
 
 ## Add your first notebook
 
