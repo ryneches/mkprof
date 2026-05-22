@@ -113,17 +113,17 @@ the quantitative sciences. Given how popular notebooks are these days, I'm frank
 baffled that I even had to write this tool. It seems natural to me to that
 notebooks should be blog posts.
 
-In the early 1990s, it was pretty normal in academic circles to run a web servers
-on the workstations sitting on your desk. Your publications, datasets, preprints,
-and course notes might live at `http://www.cs.university.edu/~name/` — served
+In the early 1990s, it was pretty normal in academic circles to run a web server
+on the workstation sitting on your desk. Your publications, datasets, preprints,
+and course notes might live at `http://www.cs.university.edu/~name/`, served
 directly from the machine used to run the experiments, composed in the same
 editor used to write the code. It was a research presence as close to the primary
-sources as it was possible to get.
+source as it was possible to get. Perhaps no more distant than a `cd` command.
 
 I built mkprof with the hope of reviving that spirit with current tools. You
-write and run your notebooks locally, and mkdocs builds the site. The result is a
-live extension of the working environment, not a separate content layer you
-publish *to*.
+write and run your notebooks locally, or you scribble and clip in your Obsidian
+vault, and mkdocs builds the site. The result is a live extension of the working
+environment, not a separate content layer you publish *to*.
 
 ---
 
