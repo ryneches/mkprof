@@ -7,6 +7,21 @@ mkprof uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Author pick-list in the metadata TUI: the authors field is replaced with a
+  `SelectionList` loaded from `authors.yml`, with previously-set authors
+  pre-ticked; falls back to free-text input when no `authors.yml` is present
+- `MkprofConfig.authors`: config resolution now exposes the full slug → display
+  name map from `authors.yml`, not just the single-author default
+
+### Fixed
+- `mkprof convert` no longer launches the Textual TUI; it runs headlessly,
+  logs to stdout, and exits non-zero on conversion errors — safe for CI
+- `authors.yml` format corrected to use the Material blog plugin's required
+  `authors:` wrapper key; `mkprof init` generates the same correct format
+- `config.resolve()` now unwraps the `authors:` envelope before inferring
+  `default_author`, so single-author sites are detected correctly
+
 ## [0.1.0] - unreleased
 
 ### Added

@@ -27,7 +27,7 @@ def test_resolve_default_author_from_single_author(tmp_path):
     docs = tmp_path / "docs"
     docs.mkdir()
     (docs / "authors.yml").write_text(
-        "alice:\n  name: Alice\n  description: Author\n",
+        "authors:\n  alice:\n    name: Alice\n    description: Author\n",
         encoding="utf-8",
     )
     cfg = resolve(yml)
@@ -43,7 +43,7 @@ def test_resolve_no_default_author_when_multiple(tmp_path):
     docs = tmp_path / "docs"
     docs.mkdir()
     (docs / "authors.yml").write_text(
-        "alice:\n  name: Alice\nbob:\n  name: Bob\n",
+        "authors:\n  alice:\n    name: Alice\n  bob:\n    name: Bob\n",
         encoding="utf-8",
     )
     cfg = resolve(yml)
@@ -60,6 +60,23 @@ def test_resolve_extra_mkprof_overrides(tmp_path):
     cfg = resolve(yml)
     assert cfg.posts_dir == (tmp_path / "custom" / "posts").resolve()
     assert cfg.default_author == "custom-author"
+
+
+def test_resolve_authors_map(tmp_path):
+    yml = tmp_path / "mkdocs.yml"
+    yml.write_text(
+        "site_name: Test\nplugins:\n  - blog:\n      authors_file: authors.yml\n",
+        encoding="utf-8",
+    )
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "authors.yml").write_text(
+        "authors:\n  alice:\n    name: Alice Smith\n  bob:\n    name: Bob Jones\n",
+        encoding="utf-8",
+    )
+    cfg = resolve(yml)
+    assert cfg.authors == {"alice": "Alice Smith", "bob": "Bob Jones"}
+    assert cfg.default_author == ""  # multiple authors → no default
 
 
 def test_resolve_bare_blog_plugin_string(tmp_path):

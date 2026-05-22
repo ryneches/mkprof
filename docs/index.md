@@ -12,7 +12,7 @@ that converts Jupyter notebooks into blog posts.
 - Discovers `.ipynb` files in your blog's posts directory
 - Converts notebooks to Markdown, extracting figures and preserving code outputs
 - Rewrites local asset references so paths resolve correctly after MkDocs builds the site
-- Prompts for any missing YAML frontmatter through an interactive TUI (local development)
+- Prompts for any missing YAML frontmatter through an interactive TUI (local development), with a pick-list for authors loaded from `authors.yml`
 - Skips notebooks with missing metadata silently when running headless (CI)
 
 ## Quick start

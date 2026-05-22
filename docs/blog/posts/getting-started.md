@@ -69,6 +69,12 @@ tags:
 
 Write the rest of your post in the remaining cells as normal.
 
+If the metadata cell is missing or incomplete, mkprof will prompt you when
+you next run `mkprof` or `mkprof serve`. The authors field shows a
+selectable list drawn from `docs/authors.yml`, so you can tick the right
+names rather than typing slugs by hand. Multiple authors can be selected
+for a single post.
+
 ## Convert and serve (local development)
 
 Run mkprof from the project root:

@@ -4,7 +4,7 @@ mkprof.config — resolve configuration from mkdocs.yml and extra.mkprof overrid
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -18,6 +18,7 @@ class MkprofConfig:
     default_author: str
     site_name: str
     mkdocs_yml: Path
+    authors: dict[str, str] = field(default_factory=dict)  # slug → display name
 
 
 def resolve(mkdocs_yml: Path | None = None) -> MkprofConfig:
@@ -60,14 +61,23 @@ def resolve(mkdocs_yml: Path | None = None) -> MkprofConfig:
 
     posts_dir = docs_dir / blog_dir / "posts"
 
-    # ── default_author: infer from authors.yml if there is exactly one ────────
+    # ── authors: load slug→name map; infer default if only one ──────────────
     default_author = ""
+    authors: dict[str, str] = {}
     authors_path = docs_dir / authors_file_rel
     if authors_path.exists():
         try:
             authors_data = yaml.safe_load(authors_path.read_text(encoding="utf-8")) or {}
-            if isinstance(authors_data, dict) and len(authors_data) == 1:
-                default_author = next(iter(authors_data))
+            # Material blog plugin wraps slugs under a top-level "authors:" key.
+            if isinstance(authors_data, dict) and "authors" in authors_data:
+                authors_data = authors_data["authors"] or {}
+            if isinstance(authors_data, dict):
+                authors = {
+                    slug: (info.get("name", slug) if isinstance(info, dict) else str(slug))
+                    for slug, info in authors_data.items()
+                }
+                if len(authors) == 1:
+                    default_author = next(iter(authors))
         except yaml.YAMLError:
             pass
 
@@ -90,4 +100,5 @@ def resolve(mkdocs_yml: Path | None = None) -> MkprofConfig:
         default_author=default_author,
         site_name=site_name,
         mkdocs_yml=mkdocs_yml.resolve(),
+        authors=authors,
     )

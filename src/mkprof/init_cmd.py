@@ -51,9 +51,10 @@ markdown_extensions:
 """
 
 _AUTHORS_YML = """\
-{slug}:
-  name: {name}
-  description: {name}
+authors:
+  {slug}:
+    name: {name}
+    description: {name}
 """
 
 _HOOKS_PY = '''\

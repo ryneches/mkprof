@@ -17,7 +17,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Button, Footer, Header, Input, Label, RichLog, Rule, Static
+from textual.widgets import Button, Footer, Header, Input, Label, RichLog, Rule, SelectionList, Static
 
 from mkprof.config import MkprofConfig
 from mkprof.notebook import render as render_nb
@@ -152,6 +152,12 @@ class MetadataModal(ModalScreen[dict | str | None]):
     #word-list {
         color: $warning;
     }
+    #f-authors-list {
+        max-height: 6;
+        border: solid $surface-lighten-2;
+        background: $surface-darken-1;
+        margin-top: 0;
+    }
     """
 
     def __init__(
@@ -160,6 +166,7 @@ class MetadataModal(ModalScreen[dict | str | None]):
         hints: dict | None = None,
         unknown_words: list[str] | None = None,
         default_author: str = "",
+        available_authors: list[tuple[str, str]] | None = None,
         idx: int = 0,
         total: int = 0,
     ) -> None:
@@ -168,6 +175,7 @@ class MetadataModal(ModalScreen[dict | str | None]):
         self.hints = hints or {}
         self.unknown_words = unknown_words or []
         self.default_author = default_author
+        self.available_authors = available_authors or []
         self.idx = idx
         self.total = total
         self._draft_armed = False
@@ -215,8 +223,25 @@ class MetadataModal(ModalScreen[dict | str | None]):
             yield Input(value=default_desc, placeholder="One-line summary shown in the blog index", id="f-desc")
             yield Label("Tags  (comma-separated)", classes="field-label")
             yield Input(value=tags_hint, placeholder="python, biology, math", id="f-tags")
-            yield Label("Authors  (space-separated slugs from authors.yml)", classes="field-label")
-            yield Input(value=authors_hint, id="f-authors")
+            if self.available_authors:
+                yield Label("Authors", classes="field-label")
+                hints_authors = self.hints.get("authors")
+                if hints_authors is None:
+                    preselected = {self.default_author} if self.default_author else set()
+                elif isinstance(hints_authors, list):
+                    preselected = set(hints_authors)
+                else:
+                    preselected = {str(hints_authors)}
+                yield SelectionList(
+                    *[
+                        (f"{markup_escape(name)}  [dim]({markup_escape(slug)})[/dim]", slug, slug in preselected)
+                        for slug, name in self.available_authors
+                    ],
+                    id="f-authors-list",
+                )
+            else:
+                yield Label("Authors  (space-separated slugs from authors.yml)", classes="field-label")
+                yield Input(value=authors_hint, id="f-authors")
             yield Label("Slug  (leave blank to derive from filename)", classes="field-label")
             yield Input(value=slug_hint, placeholder=stem, id="f-slug")
             if self.unknown_words:
@@ -267,9 +292,14 @@ class MetadataModal(ModalScreen[dict | str | None]):
         if tags_raw:
             meta["tags"] = [t.strip() for t in tags_raw.split(",") if t.strip()]
 
-        authors_raw = self.query_one("#f-authors", Input).value.strip()
-        if authors_raw:
-            meta["authors"] = authors_raw.split()
+        if self.available_authors:
+            selected = self.query_one("#f-authors-list", SelectionList).selected
+            if selected:
+                meta["authors"] = list(selected)
+        else:
+            authors_raw = self.query_one("#f-authors", Input).value.strip()
+            if authors_raw:
+                meta["authors"] = authors_raw.split()
 
         slug = self.query_one("#f-slug", Input).value.strip()
         if slug:
@@ -467,6 +497,7 @@ class BuildApp(App[None]):
                 peek_fn(path),
                 unknown_words=unknown_words,
                 default_author=self.cfg.default_author,
+                available_authors=list(self.cfg.authors.items()),
                 idx=idx,
                 total=total,
             )
