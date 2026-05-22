@@ -1,0 +1,7 @@
+/* mkprof docs extra styles */
+
+.nb-fig {
+    display: block;
+    margin: 1.5em auto;
+    max-width: 100%;
+}

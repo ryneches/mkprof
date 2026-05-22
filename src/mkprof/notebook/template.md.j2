@@ -1,0 +1,42 @@
+---
+{{ frontmatter -}}
+---
+
+*Article available as a Jupyter Notebook: [:material-notebook-outline: `{{ post.nb_filename }}`]({{ nb_asset_path }}/{{ post.nb_filename }}){ download="{{ post.nb_filename }}" }*
+
+{% for cell in post.cells %}
+{% if cell.kind == "markdown" %}
+{{ cell.content }}
+
+{% elif cell.kind == "excerpt_marker" %}
+<!-- more -->
+
+{% elif cell.kind == "code" %}
+```{{ cell.language }}
+{{ cell.source.rstrip() }}
+```
+
+{% for output in cell.outputs %}
+{% if output.kind == "text" %}
+```
+{{ output.content }}
+```
+
+{% elif output.kind == "image" %}
+![Figure {{ output.index }}]({{ output.path }}){ .nb-fig }
+
+{% elif output.kind == "error" %}
+```
+{{ output.name }}: {{ output.value }}
+```
+
+{% endif %}
+{% endfor %}
+{% elif cell.kind == "widget" %}
+
+!!! info "Interactive widget"
+    This cell contains an interactive Marimo widget ({{ cell.description }}).
+    [:material-notebook-outline: Open notebook]({{ nb_asset_path }}/{{ post.nb_filename }})
+
+{% endif %}
+{% endfor %}

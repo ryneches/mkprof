@@ -1,0 +1,48 @@
+site_name: mkprof
+site_url: https://ryneches.github.io/mkprof
+repo_url: https://github.com/ryneches/mkprof
+repo_name: ryneches/mkprof
+
+docs_dir: docs
+
+exclude_docs: |
+  blog/posts/*.ipynb
+  **/.ipynb_checkpoints/
+
+hooks:
+  - hooks.py
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.indexes
+    - navigation.instant
+    - navigation.footer
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+plugins:
+  - search
+  - blog:
+      blog_dir: blog
+      authors: true
+      authors_file: authors.yml
+      post_excerpt: optional
+      post_excerpt_separator: <!-- more -->
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+
+extra_css:
+  - stylesheets/extra.css
