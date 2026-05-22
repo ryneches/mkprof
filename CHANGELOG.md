@@ -42,6 +42,18 @@ mkprof uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - `docs/tags.md` for the tags plugin
   - `docs/index.md` includes the `<!-- RECENT_POSTS -->` placeholder
 
+### Fixed
+- `.nb-fig` styling now applies to figures in non-blog pages (e.g. pages
+  under Projects) and hand-authored Markdown files, not only notebook posts:
+  - `on_page_markdown` hook now injects `{ .nb-fig }` at build time on any
+    standalone image (sole content of its paragraph) that has non-empty alt
+    text and no existing attr_list block; authors who explicitly set
+    `{ .nb-photo }` or other attrs are not overridden
+  - `_rewrite_asset_paths` in `jupyter.py` now applies `.nb-fig` to all
+    local images with alt text in notebook markdown cells, not only those
+    whose path was rewritten — fixing the class being silently dropped for
+    notebooks outside `docs/blog/posts/`
+
 ### Added
 - Author pick-list in the metadata TUI: the authors field is replaced with a
   `SelectionList` loaded from `authors.yml`, with previously-set authors

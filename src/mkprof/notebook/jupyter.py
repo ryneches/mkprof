@@ -127,7 +127,8 @@ def _rewrite_asset_paths(
         bang, alt, path, rest = m.group(1), m.group(2), m.group(3), m.group(4) or ""
         new_path = _rewrite(path)
         result = f"{bang}[{alt}]({new_path}{rest}"
-        if bang == "!" and new_path != path:
+        is_local = not path.startswith(("http://", "https://", "//", "#", "mailto:", "/"))
+        if bang == "!" and alt.strip() and is_local:
             result += "{ .nb-fig }"
         return result
 

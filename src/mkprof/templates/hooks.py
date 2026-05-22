@@ -135,8 +135,29 @@ def on_nav(nav, config, files, **kwargs):
 RECENT_POSTS_PLACEHOLDER = "<!-- RECENT_POSTS -->"
 RECENT_POSTS_COUNT = 5  # Style: number of recent posts shown by the placeholder.
 
+# Matches a markdown image that is the only content on its line.
+# Group 1: full image syntax  Group 2: alt text  Group 3: existing attr_list (or None)
+_STANDALONE_IMG = re.compile(
+    r'^(!\[([^\]]*)\]\([^)]+\))(\s*\{[^}]*\})?\s*$',
+    re.MULTILINE,
+)
+
+
+def _inject_nb_fig(markdown: str) -> str:
+    """Add { .nb-fig } to standalone images that have alt text and no existing attrs."""
+    def _replace(m: re.Match) -> str:
+        img, alt, attrs = m.group(1), m.group(2), m.group(3) or ""
+        if not alt.strip():   # decorative / no alt — leave alone
+            return m.group(0)
+        if attrs.strip():     # author already set attrs — respect them
+            return m.group(0)
+        return img + "{ .nb-fig }"
+    return _STANDALONE_IMG.sub(_replace, markdown)
+
 
 def on_page_markdown(markdown, page, config, files, **kwargs):
+    markdown = _inject_nb_fig(markdown)
+
     if RECENT_POSTS_PLACEHOLDER not in markdown:
         return markdown
 
