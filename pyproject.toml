@@ -46,9 +46,9 @@ dev = [
 mkprof = "mkprof.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/ryneches/mkprof"
+Homepage = "https://mkprof.vort.org"
 Repository = "https://github.com/ryneches/mkprof"
-Documentation = "https://ryneches.github.io/mkprof"
+Documentation = "https://mkprof.vort.org"
 Changelog = "https://github.com/ryneches/mkprof/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]

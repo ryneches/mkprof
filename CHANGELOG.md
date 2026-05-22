@@ -7,6 +7,9 @@ mkprof uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Documentation site is live at [mkprof.vort.org](https://mkprof.vort.org)
+
 ### Added
 - Author pick-list in the metadata TUI: the authors field is replaced with a
   `SelectionList` loaded from `authors.yml`, with previously-set authors
