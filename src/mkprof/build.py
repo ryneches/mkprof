@@ -35,6 +35,59 @@ from mkprof.notebook.markdown import (
 )
 
 
+def run_convert(cfg: MkprofConfig) -> int:
+    """
+    Headless notebook conversion for CI/scripting.
+
+    Skips notebooks with missing metadata rather than prompting.
+    Returns the number of conversion failures (0 = success).
+    """
+    from rich.console import Console
+    console = Console()
+
+    posts_dir = cfg.posts_dir
+    notebooks = sorted(
+        p for p in posts_dir.glob("*.ipynb")
+        if ".ipynb_checkpoints" not in str(p)
+    )
+
+    if not notebooks:
+        console.print(f"[dim]No notebooks found in {posts_dir}[/dim]")
+        return 0
+
+    console.print(
+        f"Found [bold]{len(notebooks)}[/bold] notebook(s) in [cyan]{posts_dir}[/cyan]"
+    )
+
+    failed = 0
+    for nb_path in notebooks:
+        if extract_nb_metadata(nb_path) is None:
+            console.print(f"[yellow]  skip[/yellow]  {nb_path.name}  (no metadata — run mkprof interactively to add it)")
+            continue
+
+        out_md = nb_path.with_suffix(".md")
+        if out_md.exists() and out_md.stat().st_mtime >= nb_path.stat().st_mtime:
+            console.print(f"[dim]  up-to-date[/dim]  {nb_path.name}")
+            continue
+
+        console.print(f"[cyan]  converting[/cyan]  {nb_path.name} …", end="")
+        try:
+            t0 = time.monotonic()
+            post = parse_nb(nb_path, cfg.docs_dir)
+            out_md, images = render_nb(post, nb_path, cfg.docs_dir)
+            elapsed = time.monotonic() - t0
+            console.print(f"  [green]✓[/green] [dim]({elapsed:.1f}s)[/dim]")
+            if images:
+                console.print(f"    [dim]{len(images)} image(s) → {nb_path.stem}_files/[/dim]")
+            for w in post.asset_warnings:
+                console.print(f"    [yellow]⚠  {w}[/yellow]")
+        except Exception as exc:
+            console.print(f"  [red]✗  {markup_escape(str(exc))}[/red]")
+            failed += 1
+
+    return failed
+
+
 def _parse_date(s: str) -> date_type | None:
     normalized = s.strip().replace("/", "-").replace(".", "-")
     try:

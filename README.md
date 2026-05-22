@@ -78,10 +78,23 @@ extra:
 ## Commands
 
 ```
-mkprof              convert notebooks + prompt to build or serve
-mkprof serve        convert notebooks + start mkdocs dev server
-mkprof convert      convert notebooks only, skip mkdocs
+mkprof              TUI: convert notebooks + prompt to build or serve
+mkprof serve        TUI: convert notebooks + start mkdocs dev server
+mkprof build        TUI: convert notebooks + run mkdocs build
+mkprof convert      headless: convert notebooks only (CI-safe, no prompts)
 mkprof init [DIR]   scaffold a new site (default: current directory)
+```
+
+`mkprof`, `mkprof serve`, and `mkprof build` launch a Textual TUI that
+prompts interactively for any missing blog frontmatter and lets you move
+incomplete posts to drafts.
+
+`mkprof convert` is non-interactive: it logs to stdout, skips notebooks
+that are missing metadata without prompting, and exits non-zero on
+conversion errors. Use it in CI:
+
+```yaml
+- run: mkprof convert && mkdocs build
 ```
 
 ## How it fits with mkdocs

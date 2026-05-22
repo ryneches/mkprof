@@ -10,10 +10,10 @@ that converts Jupyter notebooks into blog posts.
 ## What it does
 
 - Discovers `.ipynb` files in your blog's posts directory
-- Prompts for any missing YAML frontmatter through an interactive TUI
 - Converts notebooks to Markdown, extracting figures and preserving code outputs
 - Rewrites local asset references so paths resolve correctly after MkDocs builds the site
-- Runs `mkdocs build` or `mkdocs serve` once conversion is complete
+- Prompts for any missing YAML frontmatter through an interactive TUI (local development)
+- Skips notebooks with missing metadata silently when running headless (CI)
 
 ## Quick start
 
@@ -36,13 +36,26 @@ contains your `mkdocs.yml`.
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `mkprof` | Convert notebooks, then prompt to build or serve |
-| `mkprof serve` | Convert notebooks and start `mkdocs serve` |
-| `mkprof build` | Convert notebooks and run `mkdocs build` |
-| `mkprof convert` | Convert notebooks only; skip running mkdocs |
-| `mkprof init [DIR]` | Scaffold a new mkprof/mkdocs-material site |
+| Command | Mode | Description |
+|---------|------|-------------|
+| `mkprof` | TUI | Convert notebooks, then prompt to build or serve |
+| `mkprof serve` | TUI | Convert notebooks and start `mkdocs serve` |
+| `mkprof build` | TUI | Convert notebooks and run `mkdocs build` |
+| `mkprof convert` | Headless | Convert notebooks only — no prompts, CI-safe |
+| `mkprof init [DIR]` | — | Scaffold a new mkprof/mkdocs-material site |
+
+The TUI commands (`mkprof`, `serve`, `build`) launch an interactive
+[Textual](https://textual.textualize.io/) interface that prompts for any
+missing blog frontmatter and lets you move incomplete posts to a drafts
+folder before building.
+
+`mkprof convert` is non-interactive: it logs to stdout, skips any
+notebook missing metadata (with a warning), and exits non-zero on
+conversion errors. Use it in CI pipelines:
+
+```yaml
+- run: mkprof convert && mkdocs build
+```
 
 ## Configuration
 

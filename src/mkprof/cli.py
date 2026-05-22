@@ -51,9 +51,11 @@ def main() -> None:
         print(f"mkprof: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    mode_map = {None: "build", "build": "build", "serve": "serve", "convert": "convert"}
-    mode = mode_map[args.command]
+    if args.command == "convert":
+        from mkprof.build import run_convert
+        sys.exit(run_convert(cfg))
 
+    mode = "serve" if args.command == "serve" else "build"
     from mkprof.build import BuildApp
     BuildApp(cfg=cfg, mode=mode).run()
 
