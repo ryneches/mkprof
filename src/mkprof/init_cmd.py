@@ -55,6 +55,7 @@ authors:
   {slug}:
     name: {name}
     description: {name}
+    avatar: https://github.com/{slug}.png
 """
 
 _HOOKS_PY = '''\

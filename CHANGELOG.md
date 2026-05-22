@@ -21,6 +21,8 @@ mkprof uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `authors:` wrapper key; `mkprof init` generates the same correct format
 - `config.resolve()` now unwraps the `authors:` envelope before inferring
   `default_author`, so single-author sites are detected correctly
+- `authors.yml` entries now include a required `avatar` field; `mkprof init`
+  defaults to `https://github.com/{slug}.png`
 
 ## [0.1.0] - unreleased
 
