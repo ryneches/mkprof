@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
 name = "mkprof"
-version = "0.1.1"
+dynamic = ["version"]
 description = "A companion tool for mkdocs-material that converts Jupyter notebooks into blog posts"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -50,6 +50,9 @@ Homepage = "https://mkprof.vort.org"
 Repository = "https://github.com/ryneches/mkprof"
 Documentation = "https://mkprof.vort.org"
 Changelog = "https://github.com/ryneches/mkprof/blob/main/CHANGELOG.md"
+
+[tool.hatch.version]
+source = "vcs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mkprof"]
