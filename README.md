@@ -1,15 +1,18 @@
 # mkprof
 
 A companion tool for [mkdocs-material](https://squidfunk.github.io/mkdocs-material/)
-that converts Jupyter notebooks into blog posts.
+for building and running a blog that natively supports Jupyter notebooks
+as articles.
 
-If mkdocs is a table saw, mkprof is the crosscut sled — it makes a specific
-set of operations safer, more repeatable, and faster. It handles the awkward
-parts of the notebook-to-blog workflow so you can focus on writing.
+If you think of of mkdocs as something like a table saw, then mkprof is a
+table saw jig, like a cross-cut sled. It is a doohicky you add to a general
+purpose tool that makes a specific set of operations safer, more repeatable,
+and faster.
 
-Why is it called mkprof? Well, who makes the thing that makes the docs? In
-any event, this is a tool for making a personal site for a me, and I'm a
-professor, so... look, I had to name it *something*.
+Why is it called mkprof? Well, professors mentor doctoral candidates, and if
+mkdocs makes docs, then... look, naming things is hard and I was tired.
+
+![mkprof metadata TUI — adding frontmatter to a notebook post](docs/assets/demo.gif)
 
 ## What it does
 

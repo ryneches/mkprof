@@ -8,6 +8,22 @@ mkprof uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- Metadata modal border is now a wireframe (`border: round`) with the filename
+  embedded as the border title, replacing a separate heading Label and Rule —
+  recovers 4 rows of vertical space and visually unifies the modal with the
+  post-conversion action bar
+- All interactive buttons use a new `ArrowButton` widget: a `▶` prefix appears
+  in place of two leading spaces when the button is focused, so button width
+  stays constant and the layout never reflows; text is always white on colored
+  variants, and `text-style: bold` replaces the previous `text-style: reverse`
+  focus inversion; Space bar now activates focused buttons (previously only
+  Enter was bound)
+- "Add Metadata & Convert" button label shortened to "Add Metadata"
+- "→ Drafts" button label changed to "Save to Drafts"
+- Action bar (post-conversion menu) styled as a matching wireframe box with a
+  centered title in the border
+- `RichLog` background matches the terminal background; scrollbar hidden while
+  scroll-wheel and keyboard navigation remain functional
 - Documentation site is live at [mkprof.vort.org](https://mkprof.vort.org)
 - `docs/design.md` added: documents the opinionated layout choices with
   references to Pirolli & Card's information foraging theory, Dave Winer's
@@ -55,6 +71,8 @@ mkprof uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     notebooks outside `docs/blog/posts/`
 
 ### Added
+- `docs/assets/demo.gif`: screen-capture of the metadata TUI workflow — added
+  to the README and documentation site home page
 - Author pick-list in the metadata TUI: the authors field is replaced with a
   `SelectionList` loaded from `authors.yml`, with previously-set authors
   pre-ticked; falls back to free-text input when no `authors.yml` is present

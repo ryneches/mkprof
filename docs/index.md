@@ -15,6 +15,8 @@ that converts Jupyter notebooks into blog posts.
 - Prompts for any missing YAML frontmatter through an interactive TUI (local development), with a pick-list for authors loaded from `authors.yml`
 - Skips notebooks with missing metadata silently when running headless (CI)
 
+![mkprof metadata TUI — adding frontmatter to a notebook post](assets/demo.gif)
+
 ## Quick start
 
 Install from PyPI:

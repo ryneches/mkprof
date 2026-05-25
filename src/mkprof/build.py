@@ -12,12 +12,12 @@ from pathlib import Path
 
 from rich.markup import escape as markup_escape
 
-from textual import on
+from textual import on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, VerticalScroll
+from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Button, Footer, Header, Input, Label, RichLog, Rule, SelectionList, Static
+from textual.widgets import Button, Footer, Header, Input, Label, RichLog, SelectionList, Static, TextArea
 
 from mkprof.config import MkprofConfig
 from mkprof.notebook import render as render_nb
@@ -109,54 +109,192 @@ def move_to_drafts(nb_path: Path, drafts_dir: Path) -> Path:
 
 # ── Textual screens ───────────────────────────────────────────────────────────
 
+class _DescriptionArea(TextArea):
+    """Multi-line description field — Tab moves to next field instead of indenting."""
+    BINDINGS = [
+        Binding("tab", "screen.focus_next", "Next field", priority=True),
+        Binding("shift+tab", "screen.focus_previous", "Prev field", priority=True),
+    ]
+
+
+class ArrowButton(Button):
+    """Button with ▶ focus indicator and consistent white text on all variants.
+
+    Button's component CSS applies a near-black ``$button-color-foreground`` to
+    colored variants and ``text-style: reverse`` on focus.  Subclassing gives
+    DEFAULT_CSS rules here equal-tier priority; variant-matched selectors then
+    override those values by source order (subclass CSS is appended last).
+
+    Labels carry two spaces of padding on each side.  On focus the leading pair
+    becomes ``▶ `` so button width stays constant and the layout never reflows.
+    """
+
+    BINDINGS = [Binding("space", "press", "Press button", show=False)]
+
+    DEFAULT_CSS = """
+    ArrowButton {
+        min-width: 0;
+        content-align: left middle;
+    }
+    ArrowButton.-style-default.-success { color: white; }
+    ArrowButton.-style-default.-primary { color: white; }
+    ArrowButton.-style-default.-warning { color: white; }
+    ArrowButton.-style-default.-error   { color: white; }
+    ArrowButton.-style-default:focus    { text-style: bold; }
+    """
+
+    def __init__(self, label: str, **kwargs) -> None:
+        self._base_label = label
+        super().__init__(f"  {label}  ", **kwargs)
+
+    def on_focus(self) -> None:
+        self.label = f"▶ {self._base_label}  "
+
+    def on_blur(self) -> None:
+        self.label = f"  {self._base_label}  "
+
+
 class MetadataModal(ModalScreen[dict | str | None]):
     """Prompt the user to fill in missing blog metadata or skip to drafts."""
+
+    # Layout thresholds (terminal rows)
+    _REPL_THRESHOLD = 18           # below → suspend TUI, fall back to plain input() prompts
+    _ULTRA_COMPACT_THRESHOLD = 25  # below → labeled-row compact layout (= _DIALOG_MIN_HEIGHT)
+
+    # Row budget for the normal scrollable layout:
+    #   overhead = round-border×2 (2) + btn-margin (1) + buttons (3)
+    #              (title embedded in border; no padding, no Rule, no body-margin)
+    #   fixed scroll content = title/date-row (4) + desc-label+margin (2)
+    #              + tags/slug-row+margin (5) + authors-label (1)
+    #              + authors-list max-height:3 (3) + spell-check-label (1)
+    #   minimum dialog = overhead + fixed + desc_min = 6 + 16 + 3 = 25
+    #   desc_min = 3: border-top + 1 text row + border-bottom (same as other Input fields)
+    _DIALOG_OVERHEAD = 6
+    _SCROLL_FIXED = 16
+    _DIALOG_MIN_HEIGHT = 25   # mirrors min-height in DEFAULT_CSS #dialog rule
+    _DESC_MAX = 8
 
     DEFAULT_CSS = """
     MetadataModal {
         align: center middle;
     }
     #dialog {
-        width: 72;
-        height: auto;
-        padding: 1 2;
-        background: $surface;
-        border: thick $primary;
+        width: 78;
+        height: 85%;
+        min-height: 25;
+        padding: 0 2;
+        background: $background;
+        border: round $primary;
+        border-title-align: left;
+        border-title-color: $warning;
+        border-title-style: bold;
     }
-    #dialog-title {
-        text-style: bold;
-        color: $warning;
-        margin-bottom: 1;
+    #dialog-body {
+        height: 1fr;
     }
-    .field-label {
+    /* Explicitly zero out all margins inside the scroll body.
+       Textual's DEFAULT_CSS for TextArea, SelectionList, etc. can add
+       implicit margins that compound into large gaps inside a scroll area. */
+    #row-title-date, #row-tags-slug,
+    #col-title, #col-date, #col-tags, #col-slug,
+    #f-title, #f-date, #f-desc, #f-tags, #f-slug,
+    #f-authors, #f-authors-list {
+        margin: 0;
+    }
+    .field-label, .col-label {
         color: $text-muted;
+        margin: 0;
+    }
+    #col-title, #col-tags {
+        width: 2fr;
+        padding-right: 2;
+    }
+    #col-date, #col-slug {
+        width: 1fr;
+    }
+    /* One line of breathing room before the second field group */
+    #row-tags-slug {
         margin-top: 1;
     }
-    #buttons {
-        margin-top: 2;
-        height: auto;
+    /* Description: height set dynamically by _apply_layout; 3 is the minimum (1 text row + borders) */
+    #f-desc {
+        height: 3;
     }
-    #btn-add {
-        margin-right: 2;
-    }
-    #btn-skip {
-        margin-right: 1;
+    #f-authors-list {
+        max-height: 3;
+        border: solid $surface-lighten-2;
+        background: $surface-darken-1;
     }
     #word-list-scroll {
-        max-height: 4;
+        max-height: 5;
         border: solid $surface-lighten-2;
         background: $surface-darken-1;
         padding: 0 1;
-        margin-top: 0;
+        margin: 0;
     }
     #word-list {
         color: $warning;
     }
-    #f-authors-list {
-        max-height: 6;
-        border: solid $surface-lighten-2;
-        background: $surface-darken-1;
-        margin-top: 0;
+    #buttons {
+        margin-top: 1;
+        height: auto;
+        align: center middle;
+    }
+    #btn-add  { margin-right: 2; }
+    #btn-skip { margin-right: 2; }
+
+    /* Description label: one row of breathing room above the field */
+    #desc-label {
+        margin-top: 1;
+    }
+    /* REPL fallback: hide TUI chrome while plain input() prompts run */
+    MetadataModal.repl-mode #dialog {
+        display: none;
+    }
+
+    /* ── Ultra-compact mode: labeled rows, 1 row per field, no input chrome ── */
+    /* Hidden by default; activated when MetadataModal gains .ultra-compact      */
+    #ultra-body {
+        display: none;
+        height: auto;
+        margin-top: 1;
+    }
+    .uc-row {
+        height: 1;
+        margin: 0;
+    }
+    #uc-authors-list {
+        width: 1fr;
+        height: 1;
+        min-height: 1;
+        border: none;
+        background: $boost;
+    }
+    .uc-label {
+        width: 14;
+        text-align: right;
+        color: $text-muted;
+        margin: 0;
+        padding: 0;
+    }
+    Input.uc-input {
+        width: 1fr;
+        border: none;
+        background: $boost;
+        height: 1;
+        min-height: 1;
+        margin: 0;
+        padding: 0 1;
+    }
+    MetadataModal.ultra-compact #dialog {
+        height: auto;
+        min-height: 0;
+    }
+    MetadataModal.ultra-compact #dialog-body {
+        display: none;
+    }
+    MetadataModal.ultra-compact #ultra-body {
+        display: block;
     }
     """
 
@@ -200,99 +338,266 @@ class MetadataModal(ModalScreen[dict | str | None]):
         if not authors_hint:
             authors_hint = self.default_author
 
-        slug_hint = self.hints.get("slug") or ""
-        btn_label = "Add Metadata & Convert" if self.file_path.suffix == ".ipynb" else "Add Metadata"
+        # Precompute preselected author slugs — used by both normal and UC SelectionList.
+        hints_authors = self.hints.get("authors")
+        if hints_authors is None:
+            preselected = {self.default_author} if self.default_author else set()
+        elif isinstance(hints_authors, list):
+            preselected = set(hints_authors)
+        else:
+            preselected = {str(hints_authors)}
 
-        progress = f"  [dim][{self.idx} of {self.total}][/dim]" if self.total > 1 else ""
-        with Container(id="dialog"):
-            yield Label(
-                f"No metadata found: [bold]{self.file_path.name}[/bold]{progress}",
-                id="dialog-title",
-                markup=True,
-            )
-            yield Rule()
-            yield Label("Title  [red]*[/red]", classes="field-label", markup=True)
-            yield Input(value=default_title, id="f-title")
-            yield Label(
-                "Date  [red]*[/red]  (YYYY-MM-DD)",
-                classes="field-label",
-                markup=True,
-            )
-            yield Input(value=default_date, id="f-date")
-            yield Label("Description", classes="field-label")
-            yield Input(value=default_desc, placeholder="One-line summary shown in the blog index", id="f-desc")
-            yield Label("Tags  (comma-separated)", classes="field-label")
-            yield Input(value=tags_hint, placeholder="python, biology, math", id="f-tags")
-            if self.available_authors:
-                yield Label("Authors", classes="field-label")
-                hints_authors = self.hints.get("authors")
-                if hints_authors is None:
-                    preselected = {self.default_author} if self.default_author else set()
-                elif isinstance(hints_authors, list):
-                    preselected = set(hints_authors)
+        slug_hint = self.hints.get("slug") or ""
+        btn_label = "Add Metadata"
+
+        progress = f"  [{self.idx} of {self.total}]" if self.total > 1 else ""
+        with Container(id="dialog") as dialog:
+            dialog.border_title = f"No metadata found: {self.file_path.name}{progress}"
+
+            # Form body: 1fr so it claims all space between the border title
+            # above and the buttons below.  VerticalScroll handles overflow on
+            # tight terminals; Tab navigation auto-scrolls to the focused field.
+            with VerticalScroll(id="dialog-body"):
+                # Row 1: Title (wide) + Date (narrow)
+                with Horizontal(id="row-title-date"):
+                    with Vertical(id="col-title"):
+                        yield Label("Title  [red]*[/red]", classes="col-label", markup=True)
+                        yield Input(value=default_title, id="f-title")
+                    with Vertical(id="col-date"):
+                        yield Label("Date  [red]*[/red]", classes="col-label", markup=True)
+                        yield Input(value=default_date, placeholder="YYYY-MM-DD", id="f-date")
+
+                yield Label("Description", classes="field-label", id="desc-label")
+                yield _DescriptionArea(
+                    text=default_desc,
+                    id="f-desc",
+                    show_line_numbers=False,
+                )
+
+                # Row 2: Tags (wide) + Slug (narrow)
+                with Horizontal(id="row-tags-slug"):
+                    with Vertical(id="col-tags"):
+                        yield Label("Tags  (comma-separated)", classes="col-label")
+                        yield Input(value=tags_hint, placeholder="python, biology, math", id="f-tags")
+                    with Vertical(id="col-slug"):
+                        yield Label("Slug  (blank = from filename)", classes="col-label")
+                        yield Input(value=slug_hint, placeholder=stem, id="f-slug")
+
+                if self.available_authors:
+                    yield Label("Authors", classes="field-label")
+                    yield SelectionList(
+                        *[
+                            (f"{markup_escape(name)}  [dim]({markup_escape(slug)})[/dim]", slug, slug in preselected)
+                            for slug, name in self.available_authors
+                        ],
+                        id="f-authors-list",
+                    )
                 else:
-                    preselected = {str(hints_authors)}
-                yield SelectionList(
-                    *[
-                        (f"{markup_escape(name)}  [dim]({markup_escape(slug)})[/dim]", slug, slug in preselected)
-                        for slug, name in self.available_authors
-                    ],
-                    id="f-authors-list",
-                )
-            else:
-                yield Label("Authors  (space-separated slugs from authors.yml)", classes="field-label")
-                yield Input(value=authors_hint, id="f-authors")
-            yield Label("Slug  (leave blank to derive from filename)", classes="field-label")
-            yield Input(value=slug_hint, placeholder=stem, id="f-slug")
-            if self.unknown_words:
-                n = len(self.unknown_words)
-                yield Label(
-                    f"Spell check — [yellow]{n}[/yellow] unknown word{'s' if n != 1 else ''}",
-                    classes="field-label",
-                    markup=True,
-                )
-                with VerticalScroll(id="word-list-scroll"):
-                    yield Static("  ".join(self.unknown_words), id="word-list")
-            else:
-                yield Label(
-                    "Spell check — [green]✓ no unknown words[/green]",
-                    classes="field-label",
-                    markup=True,
-                )
+                    yield Label("Authors  (space-separated slugs from authors.yml)", classes="field-label")
+                    yield Input(value=authors_hint, id="f-authors")
+
+                if self.unknown_words:
+                    n = len(self.unknown_words)
+                    yield Label(
+                        f"Spell check — [yellow]{n}[/yellow] unknown word{'s' if n != 1 else ''}",
+                        classes="field-label",
+                        markup=True,
+                    )
+                    with VerticalScroll(id="word-list-scroll"):
+                        yield Static("  ".join(self.unknown_words), id="word-list")
+                else:
+                    yield Label(
+                        "Spell check — [green]✓ no unknown words[/green]",
+                        classes="field-label",
+                        markup=True,
+                    )
+
+            # Ultra-compact layout: labeled rows, 1 row per field, no input borders.
+            # Activated when .ultra-compact class is added to the modal.
+            # Fields ordered by fill-priority: content first, metadata after.
+            with Container(id="ultra-body"):
+                with Horizontal(classes="uc-row"):
+                    yield Label("Title :", classes="uc-label")
+                    yield Input(value=default_title, id="uc-title", classes="uc-input")
+                with Horizontal(classes="uc-row"):
+                    yield Label("Description :", classes="uc-label")
+                    yield Input(value=default_desc, id="uc-desc", classes="uc-input")
+                with Horizontal(classes="uc-row"):
+                    yield Label("Tags :", classes="uc-label")
+                    yield Input(value=tags_hint, id="uc-tags", classes="uc-input")
+                with Horizontal(classes="uc-row"):
+                    yield Label("Slug :", classes="uc-label")
+                    yield Input(value=slug_hint, placeholder=stem, id="uc-slug", classes="uc-input")
+                with Horizontal(classes="uc-row"):
+                    yield Label("Date :", classes="uc-label")
+                    yield Input(value=default_date, id="uc-date", classes="uc-input")
+                if self.available_authors:
+                    with Horizontal(classes="uc-row"):
+                        yield Label("Authors :", classes="uc-label")
+                        yield SelectionList(
+                            *[
+                                (f"{markup_escape(name)}  [dim]({markup_escape(slug)})[/dim]", slug, slug in preselected)
+                                for slug, name in self.available_authors
+                            ],
+                            id="uc-authors-list",
+                        )
+                else:
+                    with Horizontal(classes="uc-row"):
+                        yield Label("Authors :", classes="uc-label")
+                        yield Input(value=authors_hint, id="uc-authors", classes="uc-input")
+
+            # Buttons pinned outside the scroll so they're always visible.
             with Horizontal(id="buttons"):
-                yield Button(btn_label, variant="primary", id="btn-add")
-                yield Button("Skip for now", id="btn-skip")
-                yield Button("→ Drafts", variant="warning", id="btn-draft")
+                yield ArrowButton(btn_label, variant="success", id="btn-add")
+                yield ArrowButton("Skip for now", variant="primary", id="btn-skip")
+                yield ArrowButton("Save to Drafts", variant="warning", id="btn-draft")
+
+    def _apply_layout(self) -> None:
+        """Resize variable elements; collapse priority: spell check → description → ultra-compact.
+
+        The modal is always rendered completely or switched to ultra-compact.
+        _DIALOG_MIN_HEIGHT / min-height in CSS ensures the dialog never clips
+        its own chrome; description grows from 3 rows (minimum) upward as space allows.
+        """
+        screen_h = self.app.size.height
+        if screen_h < self._ULTRA_COMPACT_THRESHOLD:
+            self.add_class("ultra-compact")
+            return
+        self.remove_class("ultra-compact")
+
+        wl_min = 2 if self.unknown_words else 0
+        available = (
+            max(self._DIALOG_MIN_HEIGHT, int(screen_h * 0.85))
+            - self._DIALOG_OVERHEAD
+            - self._SCROLL_FIXED
+        )
+
+        # Spell check collapses first: description gets priority, spell check uses remainder.
+        # Minimum 3: border-top + 1 text row + border-bottom (matches other Input fields).
+        desc_h = max(3, min(self._DESC_MAX, available - wl_min))
+        wl_h = max(wl_min, min(5, available - desc_h)) if self.unknown_words else 0
+
+        self.query_one("#f-desc").styles.height = desc_h
+        if self.unknown_words:
+            self.query_one("#word-list-scroll").styles.max_height = wl_h
+
+    def on_mount(self) -> None:
+        # Belt-and-suspenders: Textual's component CSS can win over DEFAULT_CSS
+        # for border/height on these widgets, so also set these imperatively.
+        for inp in self.query("Input.uc-input").results(Input):
+            inp.styles.border = ("none", "transparent")
+            inp.styles.height = 1
+        for sl in self.query("#uc-authors-list").results(SelectionList):
+            sl.styles.border = ("none", "transparent")
+            sl.styles.height = 1
+
+        self._apply_layout()
+        if self.app.size.height < self._REPL_THRESHOLD:
+            self.add_class("repl-mode")
+            self._run_repl()
+            return
+        self.query_one("#dialog-body", VerticalScroll).scroll_home(animate=False)
+
+    def on_resize(self) -> None:
+        self._apply_layout()
+
+    @work(thread=True)
+    def _run_repl(self) -> None:
+        """Collect metadata via plain input() prompts when the terminal is too small for TUI."""
+        stem = self.file_path.stem
+        default_title = (
+            self.hints.get("title") or stem.replace("-", " ").replace("_", " ").title()
+        )
+        raw_date = self.hints.get("date")
+        default_date = str(raw_date)[:10] if raw_date else str(date_type.today())
+        default_desc = self.hints.get("description") or ""
+        tags_hint = self.hints.get("tags", "")
+        if isinstance(tags_hint, list):
+            tags_hint = ", ".join(str(t) for t in tags_hint)
+        default_authors = self.default_author or ""
+
+        with self.app.suspend():
+            print(f"\n  {self.file_path.name}")
+            title   = input(f"  Title   [{default_title}]: ").strip() or default_title
+            date_s  = input(f"  Date    [{default_date}]: ").strip() or default_date
+            desc    = input(f"  Desc    [{default_desc}]: ").strip() or default_desc
+            tags    = input(f"  Tags    [{tags_hint}]: ").strip() or tags_hint
+            authors = input(f"  Authors [{default_authors}]: ").strip() or default_authors
+            slug    = input( "  Slug    (blank=auto): ").strip()
+            action  = input("  Enter=save  s=skip  d=drafts : ").strip().lower()
+            print()
+
+        if action == "s":
+            self.app.call_from_thread(self.dismiss, "skip")
+            return
+        if action == "d":
+            self.app.call_from_thread(self.dismiss, None)
+            return
+
+        post_date = _parse_date(date_s) or date_type.today()
+        meta: dict = {"title": title, "date": post_date}
+        if desc:
+            meta["description"] = desc
+        if tags:
+            meta["tags"] = [t.strip() for t in tags.split(",") if t.strip()]
+        if authors:
+            meta["authors"] = authors.split()
+        if slug:
+            meta["slug"] = slug
+
+        if self.file_path.suffix == ".ipynb":
+            write_metadata_to_notebook(self.file_path, meta)
+        else:
+            write_md_metadata(self.file_path, meta)
+        self.app.call_from_thread(self.dismiss, meta)
 
     @on(Button.Pressed, "#btn-add")
     def handle_add(self) -> None:
-        title = self.query_one("#f-title", Input).value.strip()
-        raw_date = self.query_one("#f-date", Input).value.strip()
+        ultra = self.has_class("ultra-compact")
+
+        if ultra:
+            title = self.query_one("#uc-title", Input).value.strip()
+            raw_date = self.query_one("#uc-date", Input).value.strip()
+        else:
+            title = self.query_one("#f-title", Input).value.strip()
+            raw_date = self.query_one("#f-date", Input).value.strip()
 
         if not title or not raw_date:
-            self.query_one("#dialog-title", Label).update(
-                "[red]Title and Date are required.[/red]"
-            )
+            self.query_one("#dialog").border_title = "[red]Title and Date are required.[/red]"
             return
 
         post_date = _parse_date(raw_date)
         if post_date is None:
-            self.query_one("#dialog-title", Label).update(
+            self.query_one("#dialog").border_title = (
                 f"[red]Invalid date '{markup_escape(raw_date)}' — use YYYY-MM-DD.[/red]"
             )
             return
 
         meta: dict = {"title": title, "date": post_date}
 
-        desc = self.query_one("#f-desc", Input).value.strip()
+        if ultra:
+            desc = self.query_one("#uc-desc", Input).value.strip()
+        else:
+            desc = self.query_one("#f-desc", _DescriptionArea).text.strip()
         if desc:
             meta["description"] = desc
 
-        tags_raw = self.query_one("#f-tags", Input).value.strip()
+        if ultra:
+            tags_raw = self.query_one("#uc-tags", Input).value.strip()
+        else:
+            tags_raw = self.query_one("#f-tags", Input).value.strip()
         if tags_raw:
             meta["tags"] = [t.strip() for t in tags_raw.split(",") if t.strip()]
 
-        if self.available_authors:
+        if ultra and self.available_authors:
+            selected = self.query_one("#uc-authors-list", SelectionList).selected
+            if selected:
+                meta["authors"] = list(selected)
+        elif ultra:
+            authors_raw = self.query_one("#uc-authors", Input).value.strip()
+            if authors_raw:
+                meta["authors"] = authors_raw.split()
+        elif self.available_authors:
             selected = self.query_one("#f-authors-list", SelectionList).selected
             if selected:
                 meta["authors"] = list(selected)
@@ -301,7 +606,10 @@ class MetadataModal(ModalScreen[dict | str | None]):
             if authors_raw:
                 meta["authors"] = authors_raw.split()
 
-        slug = self.query_one("#f-slug", Input).value.strip()
+        if ultra:
+            slug = self.query_one("#uc-slug", Input).value.strip()
+        else:
+            slug = self.query_one("#f-slug", Input).value.strip()
         if slug:
             meta["slug"] = slug
 
@@ -317,10 +625,11 @@ class MetadataModal(ModalScreen[dict | str | None]):
 
     @on(Button.Pressed, "#btn-draft")
     def handle_draft(self) -> None:
-        btn = self.query_one("#btn-draft", Button)
+        btn = self.query_one("#btn-draft", ArrowButton)
         if not self._draft_armed:
             self._draft_armed = True
-            btn.label = "⚠ Confirm move?"
+            btn._base_label = "⚠ Confirm?"
+            btn.label = f"▶ ⚠ Confirm?  "
             btn.variant = "error"
         else:
             self.dismiss(None)
@@ -332,23 +641,24 @@ class BuildApp(App[None]):
     BINDINGS = [Binding("q", "quit", "Quit")]
     CSS = """
     Screen { background: $background; }
-    RichLog { padding: 0 1; }
+    RichLog {
+        padding: 0 1;
+        background: $background;
+        scrollbar-size: 0 0;
+    }
     #action-bar {
         height: auto;
         padding: 1 2;
-        background: $surface;
-        border-top: thick $success;
+        background: $background;
+        border: round $primary;
+        border-title-align: center;
+        border-title-color: $success;
+        border-title-style: bold;
         display: none;
-    }
-    #action-bar-title {
-        text-align: center;
-        text-style: bold;
-        color: $success;
     }
     #action-bar-buttons {
         align: center middle;
         height: auto;
-        margin-top: 1;
     }
     #btn-action-build { margin-right: 2; }
     #btn-action-serve { margin-right: 2; }
@@ -366,14 +676,12 @@ class BuildApp(App[None]):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield RichLog(id="log", highlight=True, markup=True)
+        yield RichLog(id="log", highlight=True, markup=True, wrap=True)
         with Container(id="action-bar"):
-            yield Label("", id="action-bar-title")
-            yield Rule()
             with Horizontal(id="action-bar-buttons"):
-                yield Button("Build Site", variant="default", id="btn-action-build")
-                yield Button("Start Dev Server", variant="primary", id="btn-action-serve")
-                yield Button("Quit", variant="error", id="btn-action-quit")
+                yield ArrowButton("Build Site", variant="success", id="btn-action-build")
+                yield ArrowButton("Start Dev Server", variant="primary", id="btn-action-serve")
+                yield ArrowButton("Quit", variant="error", id="btn-action-quit")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -396,7 +704,7 @@ class BuildApp(App[None]):
     async def _show_action_menu(self, title: str) -> str:
         self._action_event.clear()
         self._action_result = ""
-        self.query_one("#action-bar-title", Label).update(title)
+        self.query_one("#action-bar").border_title = title
         self.query_one("#action-bar").display = True
         self.query_one("#btn-action-build", Button).focus()
         await self._action_event.wait()
@@ -423,13 +731,6 @@ class BuildApp(App[None]):
             elif self.focused is quit_:
                 serve.focus()
                 event.prevent_default()
-        elif event.key in ("space", "enter"):
-            if self.focused is build:
-                self._press_action_build()
-            elif self.focused is serve:
-                self._press_action_serve()
-            elif self.focused is quit_:
-                self._press_action_quit()
 
     @on(Button.Pressed, "#btn-action-build")
     def _press_action_build(self) -> None:
