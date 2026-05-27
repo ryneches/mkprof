@@ -4,6 +4,13 @@ title: mkprof
 
 # mkprof
 
+[![CI](https://github.com/ryneches/mkprof/actions/workflows/ci.yml/badge.svg)](https://github.com/ryneches/mkprof/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/mkprof)](https://pypi.org/project/mkprof/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/mkprof)](https://pypi.org/project/mkprof/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![commits since release](https://img.shields.io/github/commits-since/ryneches/mkprof/latest)](https://github.com/ryneches/mkprof/releases)
+[![Mastodon Follow](https://img.shields.io/mastodon/follow/109294614904147843?domain=https%3A%2F%2Fecoevo.social)](https://ecoevo.social/@ryneches)
+
 **mkprof** is a companion tool for [MkDocs Material](https://squidfunk.github.io/mkdocs-material/)
 that converts Jupyter notebooks into blog posts.
 
