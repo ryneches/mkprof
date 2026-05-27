@@ -73,6 +73,26 @@ mkprof uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 - `docs/assets/demo.gif`: screen-capture of the metadata TUI workflow — added
   to the README and documentation site home page
+- Full Obsidian compatibility layer for plain Markdown posts (`rewrite_obsidian`
+  in `notebook/markdown.py`); the file is updated in-place before MkDocs runs
+  so the blog plugin sees only standard Markdown:
+  - `![[image.png]]` / `![[image.png|alt]]` → `![alt](../../assets/image.png){ .nb-photo }`;
+    images resolved against `docs/assets/`; missing files logged as warnings;
+    non-image embeds (PDFs, note links) left unchanged
+  - `%%...%%` Obsidian comments stripped (inline and block); resulting blank
+    lines collapsed
+  - `[[page]]` / `[[page|display]]` wiki-links reduced to display text (file
+    extensions stripped from bare page names)
+  - `> [!type] Title` callouts converted to Material admonitions (`!!! type`);
+    `+`/`-` fold markers map to `???+` / `???`; all Obsidian type aliases
+    (caution, hint, cite, etc.) mapped to Material equivalents
+  - Fenced code blocks and inline code spans are protected — syntax inside
+    code examples is never transformed
+  - `mkprof convert` now also processes plain Markdown files (previously it
+    only ran the notebook pipeline)
+- `mkdocs.yml` template adds `pymdownx.details` (collapsible admonitions),
+  `pymdownx.mark` (`==highlight==`), and `pymdownx.tilde` (`~~strikethrough~~`
+  and `~subscript~`)
 - Author pick-list in the metadata TUI: the authors field is replaced with a
   `SelectionList` loaded from `authors.yml`, with previously-set authors
   pre-ticked; falls back to free-text input when no `authors.yml` is present

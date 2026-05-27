@@ -31,6 +31,7 @@ from mkprof.notebook import lint as nb_lint
 from mkprof.notebook.markdown import (
     extract_metadata as extract_md_metadata,
     peek_hints as peek_md_hints,
+    rewrite_obsidian,
     write_metadata as write_md_metadata,
 )
 
@@ -50,13 +51,18 @@ def run_convert(cfg: MkprofConfig) -> int:
         p for p in posts_dir.glob("*.ipynb")
         if ".ipynb_checkpoints" not in str(p)
     )
+    markdowns = sorted(
+        p for p in posts_dir.glob("*.md")
+        if not p.with_suffix(".ipynb").exists()
+    )
 
-    if not notebooks:
-        console.print(f"[dim]No notebooks found in {posts_dir}[/dim]")
+    if not notebooks and not markdowns:
+        console.print(f"[dim]No articles found in {posts_dir}[/dim]")
         return 0
 
     console.print(
-        f"Found [bold]{len(notebooks)}[/bold] notebook(s) in [cyan]{posts_dir}[/cyan]"
+        f"Found [bold]{len(notebooks)}[/bold] notebook(s) and "
+        f"[bold]{len(markdowns)}[/bold] markdown file(s) in [cyan]{posts_dir}[/cyan]"
     )
 
     failed = 0
@@ -84,6 +90,14 @@ def run_convert(cfg: MkprofConfig) -> int:
         except Exception as exc:
             console.print(f"  [red]✗  {markup_escape(str(exc))}[/red]")
             failed += 1
+
+    for md_path in markdowns:
+        if extract_md_metadata(md_path) is None:
+            console.print(f"[yellow]  skip[/yellow]  {md_path.name}  (no metadata — run mkprof interactively to add it)")
+            continue
+        embed_warnings = rewrite_obsidian(md_path, cfg.docs_dir)
+        for w in embed_warnings:
+            console.print(f"    [yellow]⚠  asset not found: {w}[/yellow]")
 
     return failed
 
@@ -867,6 +881,11 @@ class BuildApp(App[None]):
         for i, md_path in enumerate(markdowns, len(notebooks) + 1):
             if not await self._ensure_metadata(md_path, is_notebook=False, idx=i, total=total):
                 continue
+            embed_warnings = rewrite_obsidian(md_path, self.cfg.docs_dir)
+            if embed_warnings:
+                self._log(f"\n[dim]{md_path.name}[/dim]")
+                for w in embed_warnings:
+                    self._log(f"   [yellow]⚠  asset not found: {w}[/yellow]")
             issues = nb_lint.run_checks(md_path)
             if issues:
                 self._log(f"\n[dim]{md_path.name}[/dim]")
